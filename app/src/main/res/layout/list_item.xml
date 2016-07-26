@@ -13,10 +13,18 @@
         android:textSize="@dimen/headline_text"
         android:textStyle="bold"/>
 
+
     <TextView
         android:id="@+id/publishDate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="@dimen/date_text"/>
+
+    <TextView
+        android:id="@+id/contributors"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/contributors_text"
+        android:padding = "@dimen/contributors_padding"/>
 
 </LinearLayout>

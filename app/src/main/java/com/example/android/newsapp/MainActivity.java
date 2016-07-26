@@ -17,16 +17,16 @@ public class MainActivity extends AppCompatActivity {
 
         listview = (ListView) findViewById(R.id.articleList);
 
-        MyTask mytask = new MyTask(listview, MainActivity.this);
-        mytask.execute();
+        FetchArticlesFromGuardianAPITask fetchArticles = new FetchArticlesFromGuardianAPITask(listview, MainActivity.this);
+        fetchArticles.execute();
 
         swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swiperefresh);
 
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                MyTask mytask = new MyTask(listview, MainActivity.this);
-                mytask.execute();
+                FetchArticlesFromGuardianAPITask fetchArticles = new FetchArticlesFromGuardianAPITask(listview, MainActivity.this);
+                fetchArticles.execute();
                 swipeRefreshLayout.setRefreshing(false);
             }
         });

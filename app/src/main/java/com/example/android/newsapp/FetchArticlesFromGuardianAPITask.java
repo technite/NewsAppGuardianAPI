@@ -8,11 +8,9 @@ import android.os.AsyncTask;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -23,26 +21,24 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 
-public class MyTask extends AsyncTask <Void, Void, Void> {
+public class FetchArticlesFromGuardianAPITask extends AsyncTask <Void, Void, Void> {
 
     Context context;
     ArrayList<Article> articles = new ArrayList<>();
     ListView listview;
 
-   
-    public MyTask(ListView listview,Context context) {
+    public FetchArticlesFromGuardianAPITask(ListView listview, Context context) {
         this.listview = listview;
         this.context = context;
     }
 
     @Override
     protected Void doInBackground(Void... voids) {
-
         HttpURLConnection urlConnection = null;
         BufferedReader reader;
         String resultJSON;
-
         URL url = null;
+
         try {
             String linkText = context.getString(R.string.guardian_api_technology);
             url = new URL(linkText);
@@ -89,7 +85,6 @@ public class MyTask extends AsyncTask <Void, Void, Void> {
 
     @Override
     protected void onPostExecute(Void aVoid) {
-
         ArticleAdapter adapter = new ArticleAdapter((Activity) context, articles);
         listview = (ListView) listview.findViewById(R.id.articleList);
         listview.setAdapter(adapter);
@@ -103,7 +98,6 @@ public class MyTask extends AsyncTask <Void, Void, Void> {
     }
 
     private ArrayList<Article> fetchArticles (String jsonString) throws JSONException {
-
         articles = new ArrayList<>();
 
         JSONObject root = new JSONObject(jsonString);
@@ -111,16 +105,26 @@ public class MyTask extends AsyncTask <Void, Void, Void> {
         JSONArray results = response.getJSONArray(context.getString(R.string.json_results));
 
         for(int i = 0; i < results.length(); i++) {
+            String contributors = "";
             JSONObject singleArticle = results.getJSONObject(i);
             String title = singleArticle.optString(context.getString(R.string.json_web_title));
             String webURL = singleArticle.optString(context.getString(R.string.json_web_url));
             String publicationDate = singleArticle.optString(context.getString(R.string.json_web_publication_date));
 
-            articles.add(new Article(publicationDate,title, webURL));
+            JSONArray tagsArray = singleArticle.getJSONArray(context.getString(R.string.json_tags));
+            for(int idx = 0; idx < tagsArray.length(); idx++) {
+                JSONObject tag = tagsArray.getJSONObject(idx);
+                if (tag.has(context.getString(R.string.json_type))) {
+                    if(tag.optString(context.getString(R.string.json_type)).equals(context.getString(R.string.json_contributor))){
+                        contributors += tag.optString(context.getString(R.string.json_web_title));
+                        if(tagsArray.length()>1 && idx < tagsArray.length()-1){ contributors += ", ";}
+                    }
+                }
+            }
+            articles.add(new Article(publicationDate,title, webURL, contributors));
         }
         return articles;
     }
-
     public void openWebPage(String url) {
         Uri webpage = Uri.parse(url);
         Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
