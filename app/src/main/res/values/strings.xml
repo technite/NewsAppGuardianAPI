@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">News App - Technology</string>
+    <string name="guardian_api_technology">https://content.guardianapis.com/us/technology?api-key=5c6967d0-8f11-4149-9be3-da62691130c1</string>
+    <string name="json_response">response</string>
+    <string name="json_results">results</string>
+    <string name="json_web_title">webTitle</string>
+    <string name="json_web_url">webUrl</string>
+    <string name="json_web_publication_date">webPublicationDate</string>
+    <string name="date_format">yyyy-MM-dd\'T\'HH:mm:ss</string>
+</resources>
