@@ -1,4 +1,4 @@
-package com.example.android.newsapp;
+package com.example.android.mtabustime;
 
 import android.app.Activity;
 import android.content.Context;
@@ -8,9 +8,11 @@ import android.os.AsyncTask;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,15 +23,22 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 
-public class FetchArticlesFromGuardianAPITask extends AsyncTask <Void, Void, Void> {
+public class FetchBusTimes extends AsyncTask<Void, Void, Void> {
 
     Context context;
-    ArrayList<Article> articles = new ArrayList<>();
+    ArrayList<Bus> buses = new ArrayList<>();
     ListView listview;
+    String stopNumber = "400134";
 
-    public FetchArticlesFromGuardianAPITask(ListView listview, Context context) {
+    public FetchBusTimes(ListView listview, Context context) {
         this.listview = listview;
         this.context = context;
+    }
+
+    public FetchBusTimes(ListView listview, Context context, String stopNumber) {
+        this.context = context;
+        this.listview = listview;
+        this.stopNumber = stopNumber;
     }
 
     @Override
@@ -40,7 +49,7 @@ public class FetchArticlesFromGuardianAPITask extends AsyncTask <Void, Void, Voi
         URL url = null;
 
         try {
-            String linkText = context.getString(R.string.guardian_api_technology);
+            String linkText = context.getString(R.string.guardian_api_technology) + stopNumber;
             url = new URL(linkText);
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -61,6 +70,7 @@ public class FetchArticlesFromGuardianAPITask extends AsyncTask <Void, Void, Voi
             reader = new BufferedReader(new InputStreamReader(inputStream));
 
             String line;
+
             while ((line = reader.readLine()) != null) {
                 buffer.append(line + "\n");
             }
@@ -85,45 +95,46 @@ public class FetchArticlesFromGuardianAPITask extends AsyncTask <Void, Void, Voi
 
     @Override
     protected void onPostExecute(Void aVoid) {
-        ArticleAdapter adapter = new ArticleAdapter((Activity) context, articles);
+
+        BusAdapter adapter = new BusAdapter((Activity) context, buses);
         listview = (ListView) listview.findViewById(R.id.articleList);
         listview.setAdapter(adapter);
 
         listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                openWebPage(articles.get(i).getmUrl());
+                //openWebPage(buses.get(i).getmUrl());
             }
         });
     }
 
-    private ArrayList<Article> fetchArticles (String jsonString) throws JSONException {
-        articles = new ArrayList<>();
+    private ArrayList<Bus> fetchArticles(String jsonString) throws JSONException {
+        buses = new ArrayList<>();
 
         JSONObject root = new JSONObject(jsonString);
-        JSONObject response = root.getJSONObject(context.getString(R.string.json_response));
-        JSONArray results = response.getJSONArray(context.getString(R.string.json_results));
+        JSONObject siri = root.optJSONObject("Siri");
+        JSONObject serviceDelivery = siri.optJSONObject("ServiceDelivery");
+        JSONArray stopMonitoringDelivery = serviceDelivery.optJSONArray("StopMonitoringDelivery");
+        JSONObject stopMonitorObject = (JSONObject) stopMonitoringDelivery.get(0);
+        JSONArray monitoredStopVisit = stopMonitorObject.optJSONArray("MonitoredStopVisit");
 
-        for(int i = 0; i < results.length(); i++) {
-            String contributors = "";
-            JSONObject singleArticle = results.getJSONObject(i);
-            String title = singleArticle.optString(context.getString(R.string.json_web_title));
-            String webURL = singleArticle.optString(context.getString(R.string.json_web_url));
-            String publicationDate = singleArticle.optString(context.getString(R.string.json_web_publication_date));
+        for (int i = 0; i < monitoredStopVisit.length(); i++) {
+            JSONObject monitoredVehicleJourney = (JSONObject) monitoredStopVisit.get(i);
+            JSONObject vehicle = monitoredVehicleJourney.optJSONObject("MonitoredVehicleJourney");
+            JSONObject monitoredCall = vehicle.optJSONObject("MonitoredCall");
+            JSONObject extentions = monitoredCall.optJSONObject("Extensions");
+            JSONObject distances = extentions.optJSONObject("Distances");
 
-            JSONArray tagsArray = singleArticle.getJSONArray(context.getString(R.string.json_tags));
-            for(int idx = 0; idx < tagsArray.length(); idx++) {
-                JSONObject tag = tagsArray.getJSONObject(idx);
-                if (tag.has(context.getString(R.string.json_type))) {
-                    if(tag.optString(context.getString(R.string.json_type)).equals(context.getString(R.string.json_contributor))){
-                        contributors += tag.optString(context.getString(R.string.json_web_title));
-                        if(tagsArray.length()>1 && idx < tagsArray.length()-1){ contributors += ", ";}
-                    }
-                }
-            }
-            articles.add(new Article(publicationDate,title, webURL, contributors));
+            String mLineRef = vehicle.optString("PublishedLineName");
+            String mExpectedArrivalTime = monitoredCall.optString("ExpectedArrivalTime");
+            String mDestinationName = vehicle.optString("DestinationName");
+            String mPresentableDistance = distances.optString("PresentableDistance");
+            String mProgressStatus = vehicle.optString("ProgressStatus");
+
+            buses.add(new Bus(mLineRef, mExpectedArrivalTime, mDestinationName, mPresentableDistance, mProgressStatus));
         }
-        return articles;
+
+        return buses;
     }
     public void openWebPage(String url) {
         Uri webpage = Uri.parse(url);

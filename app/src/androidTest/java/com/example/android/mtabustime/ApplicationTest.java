@@ -1,4 +1,4 @@
-package com.example.android.newsapp;
+package com.example.android.mtabustime;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
